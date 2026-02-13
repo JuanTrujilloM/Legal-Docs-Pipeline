@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from typing import List, Dict, Optional
 import argparse
+from cleaning_patterns import PATTERNS
 
 # PDF processing
 try:
@@ -16,75 +17,7 @@ class DocumentCleaner:
 
     def __init__(self):
         # Common patterns to remove
-        self.patterns = {
-            
-            'suin_juriscol_ui': [
-
-                # Navegation buttons and UI elements
-                r'Ir al portal SUIN-Juriscol',
-                r'Ayúdanos a mejorar',
-                r'Guardar en PDF o imprimir la norma',
-                r'Responder Encuesta',
-                r'Descargar en Word',
-                r'Compartir este documento',
-                r'Lectura de voz',
-
-                # Index and section headers
-                r'Í\s*N\s*D\s*I\s*C\s*E\s*\[Mostrar\]',
-                r'R\s*E\s*S\s*U\s*M\s*E\s*N\s+D\s*E\s+M\s*O\s*D\s*I\s*F\s*I\s*C\s*A\s*C\s*I\s*O\s*N\s*E\s*S\s*\[Mostrar\]',
-                r'R\s*E\s*S\s*U\s*M\s*E\s*N\s+D\s*E\s+J\s*U\s*R\s*I\s*S\s*P\s*R\s*U\s*D\s*E\s*N\s*C\s*I\s*A\s*\[Mostrar\]',
-                r'T\s*E\s*X\s*T\s*O\s+C\s*O\s*R\s*R\s*E\s*S\s*P\s*O\s*N\s*D\s*I\s*E\s*N\s*T\s*E\s+A\s*\[Mostrar\]',
-                r'J\s*U\s*R\s*I\s*S\s*P\s*R\s*U\s*D\s*E\s*N\s*C\s*I\s*A\s*\[Mostrar\]',
-                r'L\s*E\s*G\s*I\s*S\s*L\s*A\s*C\s*I\s*[ÓO]\s*N\s+A\s*N\s*T\s*E\s*R\s*I\s*O\s*R\s*\[Mostrar\]',
-
-                #Course and promotional content
-                r'^\s*Curso\s+SUIN-Juriscol\s*$',
-                r'.*Curso\s+SUIN-Juriscol.*',
-                r'.*Curso\s+caracter[íi]sticas.*',
-                r'de constitucionalidad y nulidad\s*$',
-                r'^.*Inscripciones abiertas.*$',
-                r'^\s*Curso\s+Calidad\s+Normativa\s*$',
-                r'.*Curso\s+Calidad\s+Normativa.*',
-            
-                # General UI elements
-                r'\[Mostrar\]',
-            ],
-
-
-            'urls': [
-                r'https?://\S+',
-                r'www\.\S+'
-            ],
-
-            'editorial_metadata': [
-                r'DIARIO OFICIAL.*',
-                r'Diario Oficial.*',
-                r'AÑO\s+[CLXIV]+\s+No\.\s*\d+.*',
-                r'Edición de\s+\d+\s+páginas.*',
-                r'PAG\.?\s*\d+',
-                r'E\s*S\s*T\s*A\s*D\s*O\s+D\s*E\s*V\s*I\s*G\s*E\s*N\s*C\s*I\s*A\s*:.*',
-                r'Los datos publicados en SUIN-Juriscol.*'
-            ],
-
-            'navigation_timestamps': [
-                r'\d{1,2}/\d{1,2}/\d{2,4},\s*\d{1,2}:\d{2}.*',
-                r'\b\d+/\d+\b\s*$'
-            ],
-
-            'page_numbers': [
-                r'^\s*\d+\s*$',
-                r'PÁGINA\s+\d+(\s+DE\s+\d+)?',
-                r'Página\s+\d+\s+de\s+\d+'
-            ],
-
-            'headers_footers': [
-                r'^[-_=]+\s*$',
-                r'^\s*©.*$',
-                r'^\s*confidential.*$',
-                r'El Presidente del Honorable.*',
-                r'El Secretario General del Honorable.*'
-            ],
-        }
+        self.patterns = PATTERNS
     
     # Normalize whitespace: collapse multiple spaces, tabs, and newlines into a single space or newline.
     def normalize_whitespace(self, text: str) -> str:
@@ -169,12 +102,10 @@ class DocumentCleaner:
     
     # Main function to clean text by applying all cleaning steps in a logical order. This function ensures that the document is cleaned while preserving the essential legal structure and content, making it suitable for use in RAG systems.
     def clean_text(self, text: str) -> str:
-        text = text.replace('\r\n', '\n').replace('\r', '\n')
-
-        text = self.cut_before_index(text)
         
+        text = text.replace('\r\n', '\n').replace('\r', '\n')
+        text = self.cut_before_index(text)
         text = self.remove_suin_disclaimer(text)
-
         text = self.protect_legal_structure(text)
         
         for _, patterns in self.patterns.items():
@@ -201,7 +132,7 @@ class DocumentCleaner:
             )
         }
 
-     # Extract text from PDF using PyPDFium2.
+    # Extract text from PDF using PyPDFium2.
     def extract_text_from_pdf(self, pdf_path: str) -> str:
 
         if not PDF_SUPPORT:
@@ -331,3 +262,5 @@ def main():
 
 if __name__ == '__main__':
     exit(main())
+
+
