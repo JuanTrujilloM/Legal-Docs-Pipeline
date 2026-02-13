@@ -30,6 +30,8 @@ def strip_unwanted_elements(soup):
 
     # Remove elements that are hidden by inline styles.
     for tag in soup.find_all(style=True):
+        if not hasattr(tag, "attrs") or tag.attrs is None:
+            continue
         style = tag.get("style", "").replace(" ", "").lower()
         if "display:none" in style or "visibility:hidden" in style:
             tag.decompose()
