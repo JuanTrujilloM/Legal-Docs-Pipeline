@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from typing import List, Dict, Optional
 import argparse
-from cleaning_patterns import PATTERNS
+from Scripts.ProcessPDFs.cleaningPatterns import PATTERNS
 
 # PDF processing
 try:
@@ -213,8 +213,8 @@ class DocumentCleaner:
 
 
 def main():
-    # Cleaner for documents using command-line interface.
     
+    # Cleaner for documents using command-line interface.
     parser = argparse.ArgumentParser(
         description='Clean documents for RAG systems'
     )
