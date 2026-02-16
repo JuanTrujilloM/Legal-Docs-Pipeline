@@ -2,6 +2,7 @@ import argparse
 import re
 from pathlib import Path
 from bs4 import BeautifulSoup
+from text_normalization import normalize_body
 
 def clean_text(text):
     text = re.sub(r"\xa0", " ", text)
@@ -69,6 +70,7 @@ def process_directory(input_dir: Path, output_dir: Path):
         body_node = soup.body if soup.body else soup
         body = body_node.get_text(separator="\n")
         body = clean_text(body)
+        body = normalize_body(body)
 
         # Build final structured text
         final_text = ""
@@ -78,8 +80,7 @@ def process_directory(input_dir: Path, output_dir: Path):
         final_text += "ANIO: " + metadata.get("anio", "") + "\n"
         final_text += "ESTADO: " + metadata.get("estado_documento", "") + "\n"
         final_text += "ENTIDAD: " + metadata.get("entidad_emisora", "") + "\n"
-        final_text += "\n"
-        final_text += "CONTENIDO:\n\n"
+        final_text += "CONTENIDO\n"
         final_text += body
 
         # Save txt
