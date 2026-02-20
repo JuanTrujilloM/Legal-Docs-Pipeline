@@ -36,7 +36,7 @@ def strip_unwanted_elements(soup):
         if parent:
             parent.decompose()
 
-
+# Removes metadata lines from the body text based on the extracted metadata values.
 def remove_metadata_lines(body: str, source: str, subtipo: str) -> str:
     lines = body.splitlines()
     source = source.strip() if source else ""
@@ -65,7 +65,7 @@ def remove_metadata_lines(body: str, source: str, subtipo: str) -> str:
 
     return "\n".join(cleaned)
 
-
+# Main function to process all HTML files in the input directory and save cleaned TXT files in the output directory.
 def process_directory(input_dir: Path, output_dir: Path):
     output_dir.mkdir(parents=True, exist_ok=True)
     unusable_dir = output_dir.parent / "unusable_files"
@@ -146,7 +146,7 @@ def process_directory(input_dir: Path, output_dir: Path):
     print(f"- Unusable files (score < 70): {unusable_count}")
     print(f"Total files processed: {len(html_files)}")
 
-
+# Entry point for command-line execution, allowing specification of input and output directories.
 def main():
     parser = argparse.ArgumentParser(
         description="Clean and convert HTML legal documents to structured TXT format"

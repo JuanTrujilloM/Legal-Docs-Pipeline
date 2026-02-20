@@ -1,5 +1,7 @@
 import re
 from typing import Dict
+import sys
+from pathlib import Path
 
 # Calculates the ratio of lines with 3 or fewer characters
 def short_lines_ratio(text: str) -> float:
@@ -154,24 +156,22 @@ def compute_quality_score(text: str) -> Dict:
         "version": "V1"
     }
 
-
+# Example usage: python compute_metrics.py path/to/document.txt
 if __name__ == "__main__":
-    import sys
-    from pathlib import Path
 
     if len(sys.argv) != 2:
-        print("Uso: python compute_metrics.py archivo.txt")
+        print("Usage: python compute_metrics.py file.txt")
         sys.exit(1)
 
     file_path = Path(sys.argv[1])
 
     if not file_path.exists():
-        print("Archivo no encontrado.")
+        print("File not found.")
         sys.exit(1)
 
     text = file_path.read_text(encoding="utf-8")
     result = compute_quality_score(text)
 
-    print("\n--- QUALITY REPORT ---")
+    print("\nQUALITY REPORT")
     for k, v in result.items():
         print(f"{k}: {v}")
