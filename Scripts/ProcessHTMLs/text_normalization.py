@@ -1,7 +1,18 @@
 import re
 
 
-def normalize_body(text: str) -> str:
+def normalize_body(text: str, apply_body_rules: bool = True) -> str:
+    # Base cleanup used for both metadata and body.
+    text = re.sub(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]", "", text)
+    text = re.sub(r"[\uFFFD\uFFFE\uFFFF]", "", text)
+    text = re.sub(r"\xa0", " ", text)
+    text = re.sub(r"[\t\r ]+", " ", text)
+    text = re.sub(r" *\n *", "\n", text)
+    text = re.sub(r"\n{2,}", "\n", text)
+    text = re.sub(r"\(\s*\)", "", text)
+
+    if not apply_body_rules:
+        return text.strip()
     # Normalize spaced-out "A R T I C U L O" tokens.
     text = re.sub(
         r"\bA\s+R\s+T\s+[ÍI]\s+C\s+U\s+L\s+O\b",
@@ -9,6 +20,7 @@ def normalize_body(text: str) -> str:
         text,
         flags=re.IGNORECASE,
     )
+    text = re.sub(r"\bARTICULO\n(\d+°?)", r"ARTICULO \1", text)
     text = re.sub(r",\s*\n", ", ", text)
     # Normalize money formats like 2_50 or 0-04.
     text = re.sub(r"(\d)[_-](\d{2})\b", r"\1.\2", text)
@@ -40,6 +52,28 @@ def normalize_body(text: str) -> str:
     text = re.sub(r"^\s*\"+\s*$", "", text, flags=re.MULTILINE)
     text = re.sub(r"^\s*-\s*(?=[A-ZÁÉÍÓÚÑ])", "", text, flags=re.MULTILINE)
     text = re.sub(r"\s*-\s*(?=(?:El|La|Los|Las)\s)", " ", text)
+    # Separate list items that are on the same line (e.g., "text; b)" -> "text;\nb)")
+    text = re.sub(r"([;.])\s+([a-z]\))", r"\1\n\2", text)
+    # Join roman numerals in parentheses with their content (e.g., "(i)\nText" -> "(i) Text").
+    text = re.sub(
+        r"^\s*\(([ivxlcdm]+)\)\s*\n+",
+        r"(\1) ",
+        text,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+    # Join lowercase letters in parentheses with their content (e.g., "a.\nText" or "(a)\nText" -> "a. Text" or "(a) Text").
+    text = re.sub(
+        r"^\s*([a-z])\.\s*\n+",
+        r"\1. ",
+        text,
+        flags=re.MULTILINE,
+    )
+    text = re.sub(
+        r"^\s*([a-z])\)\s*\n+",
+        r"\1) ",
+        text,
+        flags=re.MULTILINE,
+    )
     # Join number-only lines with the following text line (table-like lists).
     text = re.sub(
         r"^\s*(\d+)\s*\n([A-Za-zÁÉÍÓÚÑáéíóúñ])",
@@ -72,8 +106,6 @@ def normalize_body(text: str) -> str:
     # Join dates split across lines (e.g., "Septiembre\n9 de\n1890").
     text = re.sub(r"([A-Za-zÁÉÍÓÚÑáéíóúñ\.])\s*\n(\d+\s+de\b)", r"\1 \2", text)
     text = re.sub(r"\bde\s*\n(\d{4})\b", r"de \1", text)
-    # Merge DECRETA with the following article header line.
-    text = re.sub(r"\bDECRETA:\s*\n\s*(ART\.?|ART[ÍI]CULO)", r"DECRETA: \1", text, flags=re.IGNORECASE)
     # Join lettered list markers (e.g., "b)") to the previous line.
     text = re.sub(r";\s*\n\s*([a-zA-Z]\))", r"; \1", text)
     # Join signature titles with names on the next line.
@@ -111,7 +143,22 @@ def normalize_body(text: str) -> str:
     text = re.sub(r"\n{2,}", "\n", text)
     # Remove punctuation-only lines that remain after merging.
     text = re.sub(r"^\s*[:;,.]\s*$", "", text, flags=re.MULTILINE)
+    # Separate decree/resolution keywords from article headers
+    text = re.sub(
+        r"(DECRETA|RESUELVE|ORDENA|DISPONE):\s*(Artículo|ARTICULO|ART[ÍI]CULO)",
+        r"\1:\n\2",
+        text,
+        flags=re.IGNORECASE,
+    )
     # Join article and paragrafo headers with their content lines.
+    # First, join "Artículo" on one line with the number on the next line
+    text = re.sub(
+        r"^(ART(?:[ÍI]CULO)?)\s*\n+(\d+(?:\s*\.?\s*[º°o])?\.?)",
+        r"\1 \2",
+        text,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+    # Then join the complete article header with its content
     text = re.sub(
         r"^(ART(?:[ÍI]CULO)?\.?\s+(?:\d+(?:\s*\.?\s*[º°o])?|[IVXLCDM]+|primero|segundo|tercero|cuarto|quinto|sexto|s[eé]ptimo|octavo|noveno|d[eé]cimo|und[eé]cimo|duod[eé]cimo)\.?)(?:\s*\n+)",
         r"\1 ",
@@ -124,4 +171,4 @@ def normalize_body(text: str) -> str:
         text,
         flags=re.MULTILINE | re.IGNORECASE,
     )
-    return text
+    return text.strip()
